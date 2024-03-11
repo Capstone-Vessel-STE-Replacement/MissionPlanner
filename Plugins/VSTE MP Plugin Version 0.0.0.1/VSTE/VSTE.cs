@@ -16,6 +16,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using static MissionPlanner.Utilities.Pelco;
 using MissionPlanner.Warnings;
+using System.ComponentModel;
+using CsvHelper;
+using static MissionPlanner.Utilities.GStreamer;
 
 namespace VSTE
 {
@@ -25,12 +28,10 @@ namespace VSTE
         {
             get { return "VSTE"; }
         }
-
         public override string Version
         {
-            get { return "0.0.0.1"; }
+            get { return "0.0.1.0"; }
         }
-
         public override string Author
         {
             //Caelan Desmond, Brandon Fenske, Joshua Budd, Lance Wilhelm, Maaz Chohan
@@ -49,7 +50,28 @@ namespace VSTE
         public override bool Loaded()
 		//Loaded called after the plugin dll successfully loaded
         {
-            //Create Edit Tower Locations Buttons
+            TowerButtonSetup();
+            FDActionTabSetup();
+            FPCommandSetup();
+            //TODO Later
+            /*
+            //HUD UI
+            //Host.cs.customfield0;
+            //Sound stuff try warning manager
+            //Not Testable till grounded Drone test
+            //CustomWarning cw = new CustomWarning();
+            //CustomWarning.defaultsrc = Host.cs.customfield0;
+            //cw.RepeatTime = 0;
+            //cw.ConditionType = CustomWarning.Conditional.EQ;
+            //cw.type = CustomWarning.WarningType.SpeakAndText;
+            */
+            
+
+            return true;     //If it is false plugin will not start (loop will not called)
+        }
+
+        private void TowerButtonSetup()
+        {
             var FDbut = new ToolStripMenuItem("Edit Tower Locations");
             FDbut.Click += EditTower_Click;
             Host.FDMenuMap.Items.Add(FDbut);
@@ -57,8 +79,10 @@ namespace VSTE
             var FPbut = new ToolStripMenuItem("Edit Tower Locations");
             FPbut.Click += EditTower_Click;
             Host.FPMenuMap.Items.Add(FPbut);
+        }
 
-            //Create Flight Data Mode Swap Button and Dropdown
+        private void FDActionTabSetup()
+        {
             ComboBox VSTEdropDown = new ComboBox();
             VSTEdropDown.DropDownStyle = ComboBoxStyle.DropDownList;
             VSTEdropDown.DropDownWidth = 150;
@@ -73,8 +97,10 @@ namespace VSTE
             setModeActionBut.Text = "Set VSTE Mode";
             setModeActionBut.Click += SetVSTEmode_Click;
             Host.MainForm.FlightData.tabActions.Controls[0].Controls.Add(setModeActionBut);
+        }
 
-            //Adding Commands
+        private void FPCommandSetup()
+        {
             //Based on MavCommandSelection.cs
             Dictionary<string, string[]> commands = new Dictionary<string, string[]>();
             Dictionary<string, ushort> extraCommands = new Dictionary<string, ushort>();
@@ -114,23 +140,6 @@ namespace VSTE
             Settings.Instance["PlannerExtraCommand"] = JsonConvert.SerializeObject(commands);
             Settings.Instance["PlannerExtraCommandIDs"] = JsonConvert.SerializeObject(extraCommands);
             Host.MainForm.FlightPlanner.updateCMDParams();
-
-            //HUD UI
-            //Host.cs.customfield0;
-
-            //Sound stuff try warning manager
-            //Not Testable till grounded Drone test
-            CustomWarning cw = new CustomWarning();
-            CustomWarning.defaultsrc = Host.cs.customfield0;
-            cw.RepeatTime = 0;
-            cw.ConditionType = CustomWarning.Conditional.EQ;
-            cw.type = CustomWarning.WarningType.SpeakAndText;
-            
-
-
-
-            
-            return true;     //If it is false plugin will not start (loop will not called)
         }
 
         void EditTower_Click(object sender, EventArgs e)
@@ -144,13 +153,30 @@ namespace VSTE
             }
             double Lat = pointLatLng.Lat;
             double Long = pointLatLng.Lng;
+            double Height = 0;
             double Range = 25;
             InputBox.Show(title: "Tower Information", promptText: "Tower Name", ref Name);
             InputBox.Show(title:"Tower Information", promptText:"Input Latitude", ref Lat);
             InputBox.Show(title:"Tower Information", promptText:"Input Longitude", ref Long);
-            InputBox.Show(title:"Tower Information", promptText:"Input Range", ref Range);
-            //Host.MainForm.FlightPlanner.Commands.Rows.Add()
-            //Computation
+            InputBox.Show(title: "Tower Information", promptText: "Input Height", ref Height);
+            InputBox.Show(title:"Tower Information", promptText:"Input Projected Range", ref Range);
+            Tower newTower = new Tower(Name, Lat, Long, Height, Range);
+
+            //Add to csv
+            CustomMessageBox.Show(Directory.GetCurrentDirectory());
+
+            using (var reader = new StreamReader("C:\\Users\\caela\\source\\repos\\MissionPlanner\\Plugins\\VSTE MP Plugin Version 0.0.0.1\\VSTE\\TowerConfig.csv"))
+            {
+                CustomMessageBox.Show(reader.ReadToEnd());
+                reader.Close();
+            }
+
+            using (var writer = new StreamWriter("C:\\Users\\caela\\source\\repos\\MissionPlanner\\Plugins\\VSTE MP Plugin Version 0.0.0.1\\VSTE\\TowerConfig.csv"))
+            {
+
+            }
+
+            //"TowerConfig.csv"
 
         }
 
@@ -163,11 +189,28 @@ namespace VSTE
         {
             return true;	//Return value is not used
         }
-
         public override bool Exit()
 		//Exit called when plugin is terminated (usually when Mission Planner is exiting)
         {
             return true;	//Return value is not used
         }
+    }
+    public class Tower
+    {
+        public string Name;
+        public double Lat;
+        public double Long;
+        public double Height;
+        public double Range;
+
+        public Tower(string name, double lat, double @long, double height, double range)
+        {
+            Name = name;
+            Lat = lat;
+            Long = @long;
+            Height = height;
+            Range = range;
+        }
+
     }
 }

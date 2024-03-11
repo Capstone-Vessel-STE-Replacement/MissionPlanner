@@ -181,3 +181,10 @@ C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE\obj\Debug\VSTE.dll
 C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE\obj\Debug\VSTE.pdb
 C:\Users\caela\Source\Repos\MissionPlanner\Plugins\VSTE\obj\Debug\VSTE.EditTowers.resources
 C:\Users\caela\Source\Repos\MissionPlanner\Plugins\VSTE\obj\Debug\VSTE.csproj.GenerateResource.cache
+C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE MP Plugin Version 0.0.0.1\VSTE\obj\Debug\VSTE.csproj.AssemblyReference.cache
+C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE MP Plugin Version 0.0.0.1\VSTE\obj\Debug\VSTE.EditTowers.resources
+C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE MP Plugin Version 0.0.0.1\VSTE\obj\Debug\VSTE.csproj.GenerateResource.cache
+C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE MP Plugin Version 0.0.0.1\VSTE\obj\Debug\VSTE.csproj.CoreCompileInputs.cache
+C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE MP Plugin Version 0.0.0.1\VSTE\obj\Debug\VSTE.csproj.CopyComplete
+C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE MP Plugin Version 0.0.0.1\VSTE\obj\Debug\VSTE.dll
+C:\Users\caela\source\repos\MissionPlanner\Plugins\VSTE MP Plugin Version 0.0.0.1\VSTE\obj\Debug\VSTE.pdb
