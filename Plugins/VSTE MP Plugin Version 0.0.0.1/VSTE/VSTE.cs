@@ -10,6 +10,8 @@ using MissionPlanner.Controls.PreFlight;
 using MissionPlanner.Controls;
 using System.Linq;
 using GMap.NET;
+using GMap.NET.WindowsForms;
+using GMap.NET.MapProviders;
 using System.Windows.Forms.PropertyGridInternal;
 using MissionPlanner.GCSViews;
 using Newtonsoft.Json;
@@ -19,6 +21,10 @@ using MissionPlanner.Warnings;
 using System.ComponentModel;
 using CsvHelper;
 using static MissionPlanner.Utilities.GStreamer;
+using CsvHelper.Configuration;
+using System.Globalization;
+using System.Drawing;
+using SharpDX.DirectInput;
 
 namespace VSTE
 {
@@ -40,15 +46,15 @@ namespace VSTE
 
         //[DebuggerHidden]
         public override bool Init()
-		//Init called when the plugin dll is loaded
+        //Init called when the plugin dll is loaded
         {
             loopratehz = 1;  //Loop runs every second (The value is in Hertz, so 2 means every 500ms, 0.1f means every 10 second...) 
-            
+
             return true;	 // If it is false then plugin will not load
         }
 
         public override bool Loaded()
-		//Loaded called after the plugin dll successfully loaded
+        //Loaded called after the plugin dll successfully loaded
         {
             TowerButtonSetup();
             FDActionTabSetup();
@@ -65,7 +71,7 @@ namespace VSTE
             //cw.ConditionType = CustomWarning.Conditional.EQ;
             //cw.type = CustomWarning.WarningType.SpeakAndText;
             */
-            
+
 
             return true;     //If it is false plugin will not start (loop will not called)
         }
@@ -156,28 +162,78 @@ namespace VSTE
             double Height = 0;
             double Range = 25;
             InputBox.Show(title: "Tower Information", promptText: "Tower Name", ref Name);
-            InputBox.Show(title:"Tower Information", promptText:"Input Latitude", ref Lat);
-            InputBox.Show(title:"Tower Information", promptText:"Input Longitude", ref Long);
+            InputBox.Show(title: "Tower Information", promptText: "Input Latitude", ref Lat);
+            InputBox.Show(title: "Tower Information", promptText: "Input Longitude", ref Long);
             InputBox.Show(title: "Tower Information", promptText: "Input Height", ref Height);
-            InputBox.Show(title:"Tower Information", promptText:"Input Projected Range", ref Range);
-            Tower newTower = new Tower(Name, Lat, Long, Height, Range);
+            InputBox.Show(title: "Tower Information", promptText: "Input Projected Range", ref Range);
+            Range = Range * 1852; //n mi to m
+            //Tower newTower = new Tower(Name, Lat, Long, Height, Range);
 
             //Add to csv
-            CustomMessageBox.Show(Directory.GetCurrentDirectory());
-
-            using (var reader = new StreamReader("C:\\Users\\caela\\source\\repos\\MissionPlanner\\Plugins\\VSTE MP Plugin Version 0.0.0.1\\VSTE\\TowerConfig.csv"))
+            string filepath = "C:\\Users\\caela\\source\\repos\\MissionPlanner\\Plugins\\VSTE MP Plugin Version 0.0.0.1\\VSTE\\TowerConfig.csv";
+            var records = new List<Tower>
             {
-                CustomMessageBox.Show(reader.ReadToEnd());
-                reader.Close();
-            }
+                new Tower{Name = Name, Lat = Lat, Long = Long, Height = Height, Range = Range },
+            };
 
-            using (var writer = new StreamWriter("C:\\Users\\caela\\source\\repos\\MissionPlanner\\Plugins\\VSTE MP Plugin Version 0.0.0.1\\VSTE\\TowerConfig.csv"))
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-
+                HasHeaderRecord = false,
+            };
+            using (var stream = File.Open(filepath, FileMode.Append))
+            using (var writer = new StreamWriter(stream))
+            using (var csv = new CsvWriter(writer, config))
+            {
+                csv.WriteRecords(records);
             }
+            GMapOverlay towerMap = new GMapOverlay("tower");
+            /* Colorado Example
+            List<PointLatLng> points = new List<PointLatLng>();
+            points.Add(new PointLatLng(37, -102.051487));
+            points.Add(new PointLatLng(37, -109.048728));
+            points.Add(new PointLatLng(41, -109.048728));
+            points.Add(new PointLatLng(41, -102.051487));
+            GMapPolygon colorado = new GMapPolygon(points, "colorado");
+            colorado.Fill = new SolidBrush(Color.FromArgb(50, Color.Red));
+            colorado.Stroke = new Pen(Color.Red, 1);
+            towerMap.Polygons.Add(colorado);
+            */
+            GMapPolygon outerCircle = DrawCircle(pointLatLng, Range, 360);
+            outerCircle.Fill = new SolidBrush(Color.FromArgb(50, Color.Green));
+            outerCircle.Stroke = new Pen(Color.Green, 1);
+            towerMap.Polygons.Add(outerCircle);
 
-            //"TowerConfig.csv"
+            double innerRadius = Math.Tan(45) * Height;
+            GMapPolygon innerCircle = DrawCircle(pointLatLng, innerRadius, 360);
+            innerCircle.Fill = new SolidBrush(Color.FromArgb(50, Color.Red));
+            innerCircle.Stroke = new Pen(Color.Red, 1);
+            towerMap.Polygons.Add(innerCircle);
 
+            Host.FDGMapControl.Overlays.Add(towerMap);
+            //Host.FPGMapControl.Overlays.Add(towerMap);
+            
+        }
+
+        private GMapPolygon DrawCircle(PointLatLng point, double radius, int segments)
+        {
+            List<PointLatLng> gpollist = new List<PointLatLng>();
+            double seg = Math.PI * 2 / segments;
+
+            for (int i = 0; i < segments; i++)
+            {
+                double theta = seg * i;
+                double a = point.Lat + Math.Cos(theta) * (radius / 6371000 * Math.Cos(point.Lat * Math.PI / 180));
+                double b = point.Lng + Math.Sin(theta) * (radius / 6371000);
+
+                PointLatLng gpoi = new PointLatLng(a, b);
+
+                gpollist.Add(gpoi);
+            }
+            //CustomMessageBox.Show("List built");
+
+            GMapPolygon gpol = new GMapPolygon(gpollist, "pol");
+
+            return gpol;
         }
 
         void SetVSTEmode_Click(object sender, EventArgs e)
@@ -197,12 +253,13 @@ namespace VSTE
     }
     public class Tower
     {
-        public string Name;
-        public double Lat;
-        public double Long;
-        public double Height;
-        public double Range;
+        public string Name { get; set; }
+        public double Lat { get; set; }
+        public double Long { get; set; }
+        public double Height { get; set; }
+        public double Range { get; set; }
 
+        /*
         public Tower(string name, double lat, double @long, double height, double range)
         {
             Name = name;
@@ -211,6 +268,6 @@ namespace VSTE
             Height = height;
             Range = range;
         }
-
+        */
     }
 }

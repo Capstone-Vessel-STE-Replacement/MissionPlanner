@@ -91,6 +91,10 @@
       <Project>{1378a66c-38e4-46f5-a05f-dc04ef7d4d16}</Project>
       <Name>MissionPlanner.Utilities</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\ExtLibs\GMap.NET.Drawing\GMap.NET.Drawing.csproj">
+      <Project>{d773accd-9c2d-4e94-a967-faa7ea2d21cb}</Project>
+      <Name>GMap.NET.Drawing</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EditTowers.cs">
